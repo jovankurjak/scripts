@@ -42,6 +42,7 @@ def getArgs():
     # print ("Number of arguments: ", len(argv))
     # print ("The arguments are: ", str(argv))
 
+
 # Search for log that contains MMX data(pattern 'HB:')
 # and return log file name
 def getMmxSerialFileName():
@@ -51,9 +52,11 @@ def getMmxSerialFileName():
             if searchForPattern(f, 'HB:'):
                 return f.__str__()
 
+
 def parseAll(file):
     with open(file) as fp:
         print("Sum lines: " + len(fp.readlines()).__str__())
+
 
 # searches for a certain pattern inside the log file
 def searchForPattern(f, pattern):
@@ -82,6 +85,7 @@ def index(filename, patterns):
             for pat in patterns:
                 if re.search(pat, line):
                     print(line_number.__str__() + " " + line)
+
 
 # find headers in provided file
 def findHeader(file):
@@ -113,6 +117,11 @@ def findHeader(file):
 
         print(headerCounter.__str__() + " " + tellPosition.__str__())
 
+
+# novi patern regex = r"\/([\w-]+)\s+\(\d+\)\s([\d.]+)%|(CPU)=(\d+)%"
+# patern za vreme time_regex = r"\b(\d+:\d+:\d+).\d\s+\|"
+
+
 def getNextPattern(filePointer, lineNumber, pattern):
     filePointer.seek(lineNumber)
     for line_number, line in enumerate(iter(filePointer.readline, '')):
@@ -128,6 +137,7 @@ def getNextPattern(filePointer, lineNumber, pattern):
                 print('CPU={0}; time={1}'.format(cpuPercent.__str__(), time.__str__()))
             return line_number
 
+
 def parseForFunctions(filePointer, startPosition, endPosition):
     filePointer.seek(startPosition + 1)
 
@@ -135,21 +145,23 @@ def parseForFunctions(filePointer, startPosition, endPosition):
         if filePointer.tell() == endPosition:
             break
         line = line.rstrip()
-        regex = r"\/(\w+-\w+-\w+-\w+\b|\w+-\w+-\w+\b|\w+-\w+\b|\w+\b)\s\(\d+\)\s(\d+\.\d+)%"
+        regex = r"\/([\w-]+)\s+\(\d+\)\s([\d.]+)%"
         reobj = re.search(regex, line)
         if reobj:
             print('func: {0}; %={1}'.format(
                 reobj.group(1).__str__(),
                 reobj.group(2).__str__()))
 
+
 def main():
     # args = getArgs()
-    logFileName = getMmxSerialFileName()
-    print("Log file: " + logFileName + "\n")
-    parseAll(logFileName)
-    findHeader(logFileName)
+    log_file_name = getMmxSerialFileName()
+    print("Log file: " + log_file_name + "\n")
+    parseAll(log_file_name)
+    findHeader(log_file_name)
 
     # index(logFileName, patterns=('dump', 'ErrorDump', 'trigger'))
+
 
 if __name__ == '__main__':
     main()
