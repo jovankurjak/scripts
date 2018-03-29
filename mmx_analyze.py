@@ -5,6 +5,7 @@ from sys import argv
 import argparse
 import os
 import re
+import csv
 
 
 systemApplications = [
@@ -112,7 +113,7 @@ def findHeader(file):
                 break
             headerCounter += 1
             tellPositionEnd = fp.tell()
-            parseForFunctions(fp, tellPosition, tellPositionEnd)
+            parseForFunctions(fp, curHeaderStart, curHeaderEnd)
             tellPosition = fp.tell()
 
         print(headerCounter.__str__() + " " + tellPosition.__str__())
@@ -124,18 +125,16 @@ def findHeader(file):
 
 def getNextPattern(filePointer, lineNumber, pattern):
     filePointer.seek(lineNumber)
+    current_tell = filePointer.tell()
     for line_number, line in enumerate(iter(filePointer.readline, '')):
         line = line.rstrip()
         # find first header
         # print(line)
         if re.search(pattern, line):
-            if pattern == 'CPU=':
-                reCPU = r"CPU=(\d+)"
-                reTime = r"(\d\d:\d\d:\d\d)\."
-                cpuPercent = re.search(reCPU, line).group(1)
-                time = re.search(reTime, line).group(1)
-                print('CPU={0}; time={1}'.format(cpuPercent.__str__(), time.__str__()))
-            return line_number
+            break
+        current_tell = filePointer.tell()
+    return current_tell
+
 
 
 def parseForFunctions(filePointer, startPosition, endPosition):
@@ -145,12 +144,25 @@ def parseForFunctions(filePointer, startPosition, endPosition):
         if filePointer.tell() == endPosition:
             break
         line = line.rstrip()
-        regex = r"\/([\w-]+)\s+\(\d+\)\s([\d.]+)%"
-        reobj = re.search(regex, line)
-        if reobj:
-            print('func: {0}; %={1}'.format(
-                reobj.group(1).__str__(),
-                reobj.group(2).__str__()))
+        # check if header
+        if re.search('CPU=', line) is not None:
+            regex = r"(\d\d:\d\d:\d\d)\.\d\s+\|[\s\w:]+T=\d+C,\s+CPU=(\d+)"
+            reObj = re.search(regex, line)
+            if reObj:
+                print('CPU={0}; time={1}'.format(
+                    reObj.group(2).__str__(),
+                    reObj.group(1).__str__()))
+        else:
+            # regex for function and percentage
+            # regex = r"\/([\w-]+)\s+\(\d+\)\s([\d.]+)%"
+            regex = r"\b(\d+:\d+:\d+).\d\s+\|[\s\d:]+HB:\s+[\b\w+\/]+\/([\w-]+)\s+\(\d+\)\s([\d.]+)%"
+            reObj = re.search(regex, line)
+            if reObj:
+                print('{0}; {1} -> {2}%'.format(
+                    reObj.group(1).__str__(),
+                    reObj.group(2).__str__(),
+                    reObj.group(3).__str__()))
+
 
 
 def main():
