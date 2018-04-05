@@ -95,6 +95,8 @@ def findHeader(file):
     tellPosition = 0
     tellPositionEnd = 0
     headerCounter = 0
+    csv_list = []
+    csvfile = '/home/rtrk/Desktop/cpu.csv'
     with open(file) as fp:
         fp.seek(0, 2)
         EOF = fp.tell()
@@ -113,13 +115,19 @@ def findHeader(file):
                 break
             headerCounter += 1
             tellPositionEnd = fp.tell()
-            parseForFunctions(fp, curHeaderStart, curHeaderEnd)
+            parseForFunctions(fp, curHeaderStart, curHeaderEnd, csv_list)
             tellPosition = fp.tell()
 
         print(headerCounter.__str__() + " " + tellPosition.__str__())
 
+        with open(csvfile, "w") as output:
+            """Write the list to csv file."""
 
-# novi patern regex = r"\/([\w-]+)\s+\(\d+\)\s([\d.]+)%|(CPU)=(\d+)%"
+            for entries in csv_list:
+                output.write(str(entries))
+
+
+            # novi patern regex = r"\/([\w-]+)\s+\(\d+\)\s([\d.]+)%|(CPU)=(\d+)%"
 # patern za vreme time_regex = r"\b(\d+:\d+:\d+).\d\s+\|"
 
 
@@ -137,11 +145,13 @@ def getNextPattern(filePointer, lineNumber, pattern):
 
 
 
-def parseForFunctions(filePointer, startPosition, endPosition):
+def parseForFunctions(filePointer, startPosition, endPosition, csv_list):
     filePointer.seek(startPosition + 1)
 
     for line_number, line in enumerate(iter(filePointer.readline, '')):
         if filePointer.tell() == endPosition:
+            # End list row
+            csv_list.append('\n')
             break
         line = line.rstrip()
         # check if header
@@ -149,19 +159,22 @@ def parseForFunctions(filePointer, startPosition, endPosition):
             regex = r"(\d\d:\d\d:\d\d)\.\d\s+\|[\s\w:]+T=\d+C,\s+CPU=(\d+)"
             reObj = re.search(regex, line)
             if reObj:
-                print('CPU={0}; time={1}'.format(
-                    reObj.group(2).__str__(),
-                    reObj.group(1).__str__()))
+                # Add items to the list - start row
+                csv_list.extend([reObj.group(1),  ',', reObj.group(2)])
+                # print('CPU={0}; time={1}'.format(
+                #     reObj.group(2).__str__(),
+                #     reObj.group(1).__str__()))
         else:
             # regex for function and percentage
             # regex = r"\/([\w-]+)\s+\(\d+\)\s([\d.]+)%"
             regex = r"\b(\d+:\d+:\d+).\d\s+\|[\s\d:]+HB:\s+[\b\w+\/]+\/([\w-]+)\s+\(\d+\)\s([\d.]+)%"
             reObj = re.search(regex, line)
-            if reObj:
-                print('{0}; {1} -> {2}%'.format(
-                    reObj.group(1).__str__(),
-                    reObj.group(2).__str__(),
-                    reObj.group(3).__str__()))
+            # if reObj:
+            #     # Add items to the list
+            #     print('{0}; {1} -> {2}%'.format(
+            #         reObj.group(1).__str__(),
+            #         reObj.group(2).__str__(),
+            #         reObj.group(3).__str__()))
 
 
 
