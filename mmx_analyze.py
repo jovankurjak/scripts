@@ -108,7 +108,8 @@ def getMmxSerialFileName(pattern):
 def getAllLogFiles(directory):
     """
 
-
+    Returns:
+        file_paths(dict): dictionary containing file names and keys for each file
     """
     # initializing empty file paths dictionary
     file_paths = {}
@@ -133,8 +134,8 @@ def getAllLogFiles(directory):
 # searches for a certain pattern inside the log file
 def searchForPattern(f, pattern):
     result = False
-    # with open(f, 'r', encoding='latin-1') as book:
-    with open(f, 'r') as book:
+    with open(f, 'r', encoding='utf8', errors='ignore') as book:
+    # with open(f, 'r') as book:
         for line in book:
             line = line.rstrip()
             if re.search(pattern, line):
@@ -290,20 +291,23 @@ def parseForFunctions(filePointer, startPosition, endPosition, my_list, my_dict)
 
 def main():
     args = getArgs()
-    log_file_list = getMmxSerialFileName('HB:')
-    for log in log_file_list:
-        if log is not None:
-            print("Log file: " + log)
+    log_file_list = getAllLogFiles('.')
+    for key in log_file_list.keys():
+        print('file:[{0}] ({1})'.format(log_file_list[key], key))
 
     #Apply arguments
     if args.cpu is True:
-        if log_file_list[0] is None:
+        if log_file_list is None:
             print('ERROR: file not found!')
             return
-        findHeader(log_file_list[0])
+        findHeader(log_file_list['MMX'])
     elif args.pattern is not None:
         print(args.pattern)
-        file_name = getMmxSerialFileName(args.pattern)
+        if args.pattern == '1':
+            helper.parse_all_files(getAllLogFiles('.'))
+        else:
+            # TODO: make a separate option. this is temporary
+            helper.parseMMX(args.pattern)
     elif args.all_keywords is True:
         print('all_keywords is true')
         unzip.findFiles('.')
@@ -313,7 +317,7 @@ def main():
         helper.parse_all_files(getAllLogFiles('.'))
     elif args.unzip is True:
         print('unzip is true')
-        # unzip.extractAll('.')
+        unzip.extractAll('.')
     else:
         print('No option selected! use -h for help')
 
