@@ -51,6 +51,9 @@ def getArgs():
         * Update help
     """
     parser = argparse.ArgumentParser(description='MIB2P analyze tool')
+    parser.add_argument('dirname',
+                        nargs='?',
+                        help='Directory where operation/s should be performed')
     parser.add_argument('-p',
                         '--pattern',
                         action="store",
@@ -60,24 +63,30 @@ def getArgs():
                         '--cpu',
                         action='store_true',
                         default=False,
-                        help='make a CPU analysis of an MMX file in current folder')
+                        help='make a CPU analysis of an MMX file')
     parser.add_argument('-a',
                         '--all_keywords',
                         action='store_true',
                         default=False,
-                        help='search through all the files for their respective keywords')
+                        help='grep all keywords from available files. user can provide a directory')
     parser.add_argument('-z',
                         '--unzip',
                         action='store_true',
                         default=False,
-                        help='test for unziping recursevely either zip or 7z')
+                        help='unziping recursevely either zip or 7z')
+    parser.add_argument('-l',
+                        '--list',
+                        action='store_true',
+                        default=False,
+                        help='list all serial log files found in directory(recursevely)')
     parser.add_argument('-v', '--version', action='version', version='%(prog)s {0}'.format(prog_version))
 
     # args = vars(parser.parse_args())
     args = parser.parse_args()
-    print(args)
-    print("print cpu={0}".format(args.cpu.__str__()))
-    print("print pattern={0}".format(args.pattern.__str__()))
+
+    # Print help if no arguments are provided
+    if not len(argv) > 1:
+        parser.print_help()
 
     return args
 
@@ -288,38 +297,49 @@ def parseForFunctions(filePointer, startPosition, endPosition, my_list, my_dict)
     return (my_list, my_dict)
 
 
-
 def main():
     args = getArgs()
-    log_file_list = getAllLogFiles('.')
-    for key in log_file_list.keys():
-        print('file:[{0}] ({1})'.format(log_file_list[key], key))
+    # print(args)
+    dir_name = args.dirname
 
-    #Apply arguments
-    if args.cpu is True:
-        if log_file_list is None:
-            print('ERROR: file not found!')
-            return
-        findHeader(log_file_list['MMX'])
-    elif args.pattern is not None:
-        print(args.pattern)
-        if args.pattern == '1':
-            helper.parse_all_files(getAllLogFiles('.'))
+    # get correct dir name. If dirname is not a directory or not provided, use current('.')
+    if dir_name:
+        if not os.path.isdir(dir_name):
+            print('Dirname is not a directory!')
+            dir_name = '.'
         else:
-            # TODO: make a separate option. this is temporary
-            helper.parseMMX(args.pattern)
-    elif args.all_keywords is True:
-        print('all_keywords is true')
-        unzip.findFiles('.')
-        log_files = getAllLogFiles('.')
-        for key in log_files.keys():
-            print('file:[{0}] ({1})'.format(log_files[key], key))
-        helper.parse_all_files(getAllLogFiles('.'))
-    elif args.unzip is True:
-        print('unzip is true')
-        unzip.extractAll('.')
+            print('Dirname is: {}'.format(dir_name))
     else:
-        print('No option selected! use -h for help')
+        dir_name = '.'
+        print('Dirname not provided')
+    log_file_list = getAllLogFiles(dir_name)
+
+    if args.cpu:
+        print('Option for CPU is active!')
+        if 'MMX' not in log_file_list:
+            print('No log files')
+            return
+        print('MMX file analyzed: {}'.format(log_file_list['MMX']))
+        findHeader(log_file_list['MMX'])
+
+    if args.all_keywords:
+        print('Option for all_keywords is active!')
+        if bool(log_file_list):
+            helper.parse_all_files(log_file_list)
+
+    if args.unzip:
+        print('Unzip option is active!')
+        if bool(log_file_list):
+            unzip.findFiles(log_file_list)
+
+    if args.list:
+        print('List option is active!')
+
+        if bool(log_file_list):
+            for key in log_file_list.keys():
+                print('file:[{0}] ({1})'.format(log_file_list[key], key))
+        else:
+            print('No files found!')
 
 
 if __name__ == '__main__':
