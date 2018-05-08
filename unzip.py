@@ -14,10 +14,10 @@ def findFiles(directory):
             # join the two strings in order to form the full filepath.
             filepath = os.path.join(root, filename)
             if re.search(r".zip|.7z", filename):
-                # dirname = filepath.split(".")[0]
                 dirname = filepath
                 # trim dir name for extensions
-                dirname = re.sub(r"\.zip|\.7z\.\d+$", '', dirname)
+                dirname = re.sub(r"\.zip|\.7z\.\d+$|\.7z", '', dirname)
+                print('dirname=[{0}]'.format(str(dirname)))
                 extract7z(filepath, dirname)
                 findFiles(dirname)
     print("All folders are uncompressed!")
