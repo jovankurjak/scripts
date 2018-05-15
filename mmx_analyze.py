@@ -8,8 +8,11 @@ import re
 import csv
 import collections
 
+import helper
+import unzip
+
 # Program version
-prog_version = '0.1'
+prog_version = '0.2'
 
 # Importaint functions
 systemApplications = [
@@ -32,8 +35,6 @@ systemApplications = [
     'systemservices'
 ]
 
-
-
 def getArgs():
     """This function will be used to parse args
 
@@ -50,48 +51,100 @@ def getArgs():
         * Update help
     """
     parser = argparse.ArgumentParser(description='MIB2P analyze tool')
-    parser.add_argument('-p',
-                        '--pattern',
-                        action="store",
-                        type=str,
-                        nargs='+',
-                        help='pattern that is used for search through file')
+    parser.add_argument('dirname',
+                        nargs='?',
+                        help='Directory where operation/s should be performed')
+    # parser.add_argument('-p',
+    #                     '--pattern',
+    #                     action="store",
+    #                     type=str,
+    #                     help='pattern that is used for search through file')
     parser.add_argument('-c',
                         '--cpu',
                         action='store_true',
                         default=False,
-                        help='make a CPU analysis of an MMX file in current folder')
+                        help='make a CPU analysis of an MMX file')
+    parser.add_argument('-a',
+                        '--all_keywords',
+                        action='store_true',
+                        default=False,
+                        help='grep all keywords from available files. user can provide a directory')
+    parser.add_argument('-z',
+                        '--unzip',
+                        action='store_true',
+                        default=False,
+                        help='extracting files recursevely (supported extensions: zip|7z|gz|tar)')
+    parser.add_argument('-l',
+                        '--list',
+                        action='store_true',
+                        default=False,
+                        help='list all serial log files found in directory(recursevely)')
     parser.add_argument('-v', '--version', action='version', version='%(prog)s {0}'.format(prog_version))
 
     # args = vars(parser.parse_args())
     args = parser.parse_args()
-    print(args)
-    print("print cpu={0}".format(args.cpu.__str__()))
-    print("print pattern={0}".format(args.pattern.__str__()))
+
+    # Print help if no arguments are provided
+    if not len(argv) > 1:
+        parser.print_help()
 
     return args
 
 
-def getMmxSerialFileName():
+def getMmxSerialFileName(pattern):
     """Get file name of MMX serial log
 
     Returns:
         String: file name, None otherwise.
 
     """
+    files_list = []
+    # mmx, a15, m4, subcpu
+    keywords = ['HB:', '\[CAR_CON\]', '\[BAP\]|\[M4PW\]|\[MAWD\]', '\d+\s+T:\d,\d|[\d]+[\s]+MMX Stop res$']
+
     files = [f for f in os.listdir('.') if os.path.isfile(f)]
-    for f in files:
-        if f.endswith(".txt"):
-            if searchForPattern(f, 'HB:'):
-                return f.__str__()
-    return None
+
+    for i, key in enumerate(keywords):
+        for f in files:
+            if f.endswith(".txt"):
+                if searchForPattern(f, key):
+                    # files_list[i] = f.__str__()
+                    files_list.append( f.__str__())
+
+    return files_list
+
+
+def getAllLogFiles(directory):
+    """
+
+    Returns:
+        file_paths(dict): dictionary containing file names and keys for each file
+    """
+    # initializing empty file paths dictionary
+    file_paths = {}
+    # mmx, a15, m4, subcpu
+    keywords = {'MMX': 'HB:',
+                'A15': '\[CAR_MAS\]',
+                'M4': '\[BAP\]|\[M4PW\]|\[MAWD\]',
+                'SubCpu': '\d+\s+T:\d,\d|[\d]+[\s]+MMX Stop res$'}
+
+    # crawling through directory and subdirectories
+    for root, directories, files in os.walk(directory):
+        for filename in files:
+            # join the two strings in order to form the full filepath.
+            filepath = os.path.join(root, filename)
+            if filename.endswith(".txt"):
+                for key in keywords:
+                    if searchForPattern(filepath, keywords[key]):
+                        file_paths[key] = filepath
+    return file_paths
 
 
 # searches for a certain pattern inside the log file
 def searchForPattern(f, pattern):
     result = False
-    # with open(f, 'r', encoding='latin-1') as book:
-    with open(f, 'r') as book:
+    with open(f, 'r', encoding='utf8', errors='ignore') as book:
+    # with open(f, 'r') as book:
         for line in book:
             line = line.rstrip()
             if re.search(pattern, line):
@@ -114,7 +167,7 @@ def findHeader(file):
     my_dict = {}
     # csvfile = '/home/rtrk/Desktop/cpu.csv'
     csvfile = 'cpu_quick_analysis.csv'
-    with open(file) as fp:
+    with open(file, 'r', encoding='utf8', errors='ignore') as fp:
         fp.seek(0, 2)
         EOF = fp.tell()
         fp.seek(0)
@@ -133,6 +186,7 @@ def findHeader(file):
                 break
             headerCounter += 1
             tellPositionEnd = fp.tell()
+            my_dict = dict.fromkeys(my_dict, '0')
             (mylist, my_dict) = parseForFunctions(fp, curHeaderStart, curHeaderEnd, mylist, my_dict)
             tellPosition = fp.tell()
 
@@ -243,18 +297,48 @@ def parseForFunctions(filePointer, startPosition, endPosition, my_list, my_dict)
     return (my_list, my_dict)
 
 
-
 def main():
     args = getArgs()
-    log_file_name = getMmxSerialFileName()
-    if log_file_name is None:
-        print('ERROR: file not found!')
-        return
-    print("Log file: " + log_file_name + "\n")
-    if args.cpu is True:
-        findHeader(log_file_name)
+    # print(args)
+    dir_name = args.dirname
+
+    # get correct dir name. If dirname is not a directory or not provided, use current('.')
+    if dir_name:
+        if not os.path.isdir(dir_name):
+            print('Dirname is not a directory!')
+            dir_name = '.'
+        else:
+            print('Dirname is: {}'.format(dir_name))
     else:
-        print('No option selected! use -h for help')
+        dir_name = '.'
+        print('Dirname not provided')
+    log_file_list = getAllLogFiles(dir_name)
+
+    if args.cpu:
+        print('Option for CPU is active!')
+        if 'MMX' not in log_file_list:
+            print('No log files')
+            return
+        print('MMX file analyzed: {}'.format(log_file_list['MMX']))
+        findHeader(log_file_list['MMX'])
+
+    if args.all_keywords:
+        print('Option for all_keywords is active!')
+        if bool(log_file_list):
+            helper.parse_all_files(log_file_list)
+
+    if args.unzip:
+        print('Unzip option is active!')
+        unzip.findFiles(dir_name)
+
+    if args.list:
+        print('List option is active!')
+
+        if bool(log_file_list):
+            for key in log_file_list.keys():
+                print('file:[{0}] ({1})'.format(log_file_list[key], key))
+        else:
+            print('No files found!')
 
 
 if __name__ == '__main__':
