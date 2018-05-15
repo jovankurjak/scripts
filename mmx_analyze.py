@@ -12,7 +12,7 @@ import helper
 import unzip
 
 # Program version
-prog_version = '0.1'
+prog_version = '0.2'
 
 # Importaint functions
 systemApplications = [
