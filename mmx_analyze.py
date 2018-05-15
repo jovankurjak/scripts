@@ -54,11 +54,11 @@ def getArgs():
     parser.add_argument('dirname',
                         nargs='?',
                         help='Directory where operation/s should be performed')
-    parser.add_argument('-p',
-                        '--pattern',
-                        action="store",
-                        type=str,
-                        help='pattern that is used for search through file')
+    # parser.add_argument('-p',
+    #                     '--pattern',
+    #                     action="store",
+    #                     type=str,
+    #                     help='pattern that is used for search through file')
     parser.add_argument('-c',
                         '--cpu',
                         action='store_true',
@@ -73,7 +73,7 @@ def getArgs():
                         '--unzip',
                         action='store_true',
                         default=False,
-                        help='unziping recursevely either zip or 7z')
+                        help='extracting files recursevely (supported extensions: zip|7z|gz|tar)')
     parser.add_argument('-l',
                         '--list',
                         action='store_true',
@@ -100,7 +100,7 @@ def getMmxSerialFileName(pattern):
     """
     files_list = []
     # mmx, a15, m4, subcpu
-    keywords = ['HB:', '\[CAR_CON\]', '\[MAWD\]', '\d+\s+T:\d,\d']
+    keywords = ['HB:', '\[CAR_CON\]', '\[BAP\]|\[M4PW\]|\[MAWD\]', '\d+\s+T:\d,\d|[\d]+[\s]+MMX Stop res$']
 
     files = [f for f in os.listdir('.') if os.path.isfile(f)]
 
@@ -125,8 +125,8 @@ def getAllLogFiles(directory):
     # mmx, a15, m4, subcpu
     keywords = {'MMX': 'HB:',
                 'A15': '\[CAR_MAS\]',
-                'M4': '\[MAWD\]',
-                'SubCpu': '\d+\s+T:\d,\d'}
+                'M4': '\[BAP\]|\[M4PW\]|\[MAWD\]',
+                'SubCpu': '\d+\s+T:\d,\d|[\d]+[\s]+MMX Stop res$'}
 
     # crawling through directory and subdirectories
     for root, directories, files in os.walk(directory):
@@ -167,7 +167,7 @@ def findHeader(file):
     my_dict = {}
     # csvfile = '/home/rtrk/Desktop/cpu.csv'
     csvfile = 'cpu_quick_analysis.csv'
-    with open(file) as fp:
+    with open(file, 'r', encoding='utf8', errors='ignore') as fp:
         fp.seek(0, 2)
         EOF = fp.tell()
         fp.seek(0)
@@ -329,8 +329,7 @@ def main():
 
     if args.unzip:
         print('Unzip option is active!')
-        if bool(log_file_list):
-            unzip.findFiles(log_file_list)
+        unzip.findFiles(dir_name)
 
     if args.list:
         print('List option is active!')
