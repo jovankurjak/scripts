@@ -18,7 +18,7 @@ def findFiles(directory):
                 dirname = filepath
                 # trim dir name for extensions
                 dirname = re.sub(pattern, '', dirname)
-                print('dirname=[{0}]'.format(str(dirname)))
+                # print('dirname=[{0}]'.format(str(dirname)))
                 extract7z(filepath, dirname)
                 findFiles(dirname)
     print("All folders are uncompressed!")
@@ -60,9 +60,11 @@ def extract7z(filename, directory):
         print('Extracting: filename:{0} dir={1}'.format(
             str(filename), str(directory)
         ))
-        command = "{0} x {1} -o{2}".format(
+        command = "{0} x {1} -o{2} -aos".format(
             r'"C:\Program Files\7-Zip\7z.exe"',
             filename,
             directory
         )
-        subprocess.call(command)
+        # Remove stdout=subprocess.PIPE argument to get output to stdout
+        ps = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        output = ps.communicate()[0]
