@@ -9,7 +9,7 @@ import subprocess
 def findFiles(directory):
     """Extract all files recursevely
     """
-    pattern = r"\.zip$|\.7z\.\d+$|\.7z$|\.gz$"  #r"\.zip|\.7z|\.gz$"
+    pattern = r"\.zip$|\.7z\.\d+$|\.7z$|\.gz$|\.zip.\d+$"  #r"\.zip|\.7z|\.gz$"
     for root, dirs, files in os.walk(str(directory)):
         for filename in files:
             # join the two strings in order to form the full filepath.
@@ -60,7 +60,7 @@ def extract7z(filename, directory):
         print('Extracting: filename:{0} dir={1}'.format(
             str(filename), str(directory)
         ))
-        command = "{0} x {1} -o{2} -aos".format(
+        command = "{0} x \"{1}\" -o\"{2}\" -aos".format(
             r'"C:\Program Files\7-Zip\7z.exe"',
             filename,
             directory
