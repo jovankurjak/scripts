@@ -5,7 +5,6 @@ from sys import argv
 import argparse
 import os
 import re
-import csv
 
 import options.unzip as zippin
 import options.grepall as grepall
@@ -35,7 +34,8 @@ systemApplications = [
     'systemservices'
 ]
 
-def getArgs():
+
+def get_args():
     """This function will be used to parse args
 
     Explanation of each option should be done here
@@ -91,7 +91,7 @@ def getArgs():
     return args
 
 
-def getMmxSerialFileName(pattern):
+def get_mmx_serial_file_name(pattern):
     """Get file name of MMX serial log
 
     Returns:
@@ -107,14 +107,14 @@ def getMmxSerialFileName(pattern):
     for i, key in enumerate(keywords):
         for f in files:
             if f.endswith(".txt"):
-                if searchForPattern(f, key):
+                if search_for_pattern(f, key):
                     # files_list[i] = f.__str__()
-                    files_list.append( f.__str__())
+                    files_list.append(f.__str__())
 
     return files_list
 
 
-def getAllLogFiles(directory):
+def get_all_log_files(directory):
     """
 
     Returns:
@@ -135,16 +135,16 @@ def getAllLogFiles(directory):
             filepath = os.path.join(root, filename)
             if filename.endswith(".txt"):
                 for key in keywords:
-                    if searchForPattern(filepath, keywords[key]):
+                    if search_for_pattern(filepath, keywords[key]):
                         file_paths[key] = filepath
     return file_paths
 
 
 # searches for a certain pattern inside the log file
-def searchForPattern(f, pattern):
+def search_for_pattern(f, pattern):
     result = False
     with open(f, 'r', encoding='utf8', errors='ignore') as book:
-    # with open(f, 'r') as book:
+        # with open(f, 'r') as book:
         for line in book:
             line = line.rstrip()
             if re.search(pattern, line):
@@ -154,7 +154,7 @@ def searchForPattern(f, pattern):
 
 
 def main():
-    args = getArgs()
+    args = get_args()
     # print(args)
     dir_name = args.dirname
 
@@ -168,7 +168,7 @@ def main():
     else:
         dir_name = '.'
         print('Dirname not provided')
-    log_file_list = getAllLogFiles(dir_name)
+    log_file_list = get_all_log_files(dir_name)
 
     if args.cpu:
         print('Option for CPU is active!')
@@ -176,7 +176,7 @@ def main():
             print('No log files')
             return
         print('MMX file analyzed: {}'.format(log_file_list['MMX']))
-        cpu.findHeader(log_file_list['MMX'])
+        cpu.find_header(log_file_list['MMX'])
 
     if args.all_keywords:
         print('Option for all_keywords is active!')
@@ -185,7 +185,7 @@ def main():
 
     if args.unzip:
         print('Unzip option is active!')
-        zippin.findFiles(dir_name)
+        zippin.find_files(dir_name)
 
     if args.list:
         print('List option is active!')

@@ -13,7 +13,9 @@ dict_cpu_memory = {
 }
 dict_reset_shutdown = {
     'MMX_RESET': [
-        r"SYSTEM RESET REQUESTED: RESET: reason|out-of-memory reset|requestSystemReset|SYSTEM.*RESET|RESET.*System|ErrorHandler.*reset|ooc.*(SHUTDOWN|FAST).*(FAST|SUTDOWN)|rebootSystem|watchdog.*reset"],
+        r"SYSTEM RESET REQUESTED: RESET: reason|out-of-memory reset|"
+        r"requestSystemReset|SYSTEM.*RESET|RESET.*System|"
+        r"ErrorHandler.*reset|ooc.*(SHUTDOWN|FAST).*(FAST|SUTDOWN)|rebootSystem|watchdog.*reset"],
     'MMX_3FR_RESET': [r"Update upcoming RESET"]
 }
 dict_importaint_info = {
@@ -84,6 +86,8 @@ dict_all_grep_words = {
     'M4': dict_m4,
     'SubCpu': dict_subcpu
 }
+
+
 def parse_all_files(list_of_files):
     """parses all of the files
 
@@ -95,10 +99,10 @@ def parse_all_files(list_of_files):
     """
     for key in list_of_files.keys():
         print('{0} file: {1}'.format(list_of_files[key], key))
-        goThroughFile(list_of_files[key], dict_all_grep_words[key])
+        go_through_file(list_of_files[key], dict_all_grep_words[key])
 
 
-def goThroughFile(file, double_dict_regex_end):
+def go_through_file(file, double_dict_regex_end):
     """Goes through file by groups
 
     Groups have a list of regex for them
@@ -108,11 +112,11 @@ def goThroughFile(file, double_dict_regex_end):
         print('{0}-START'.format(key.__str__()))
         for second_key in double_dict_regex_end[key]:
             print(second_key + ':')
-            parseFile(file, double_dict_regex_end[key][second_key])
+            parse_file(file, double_dict_regex_end[key][second_key])
         print('{0}-END'.format(key.__str__()))
 
 
-def parseFile(file, list_of_regex):
+def parse_file(file, list_of_regex):
     """Parse individual file with some regexes"""
     for regex in list_of_regex:
         with open(file, 'r', encoding='utf8', errors='ignore') as fp:
@@ -123,5 +127,5 @@ def parseFile(file, list_of_regex):
         print('-----------------------------------------------------------')
 
 
-def parseMMX(mmx_file):
-    goThroughFile(mmx_file, dict_mmx)
+def parse_mmx(mmx_file):
+    go_through_file(mmx_file, dict_mmx)

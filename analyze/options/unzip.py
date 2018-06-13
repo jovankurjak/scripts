@@ -5,10 +5,10 @@ import re
 import subprocess
 
 
-def findFiles(directory):
+def find_files(directory):
     """Extract all files recursevely
     """
-    pattern = r"\.zip$|\.7z\.\d+$|\.7z$|\.gz$|\.zip.\d+$"  #r"\.zip|\.7z|\.gz$"
+    pattern = r"\.zip$|\.7z\.\d+$|\.7z$|\.gz$|\.zip.\d+$"  # r"\.zip|\.7z|\.gz$"
     for root, dirs, files in os.walk(str(directory)):
         for filename in files:
             # join the two strings in order to form the full filepath.
@@ -19,7 +19,7 @@ def findFiles(directory):
                 dirname = re.sub(pattern, '', dirname)
                 # print('dirname=[{0}]'.format(str(dirname)))
                 extract7z(filepath, dirname)
-                findFiles(dirname)
+                find_files(dirname)
     print("All folders are uncompressed!")
 
 
