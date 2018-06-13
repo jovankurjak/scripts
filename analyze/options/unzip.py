@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
 import os
-import io
 import re
 import subprocess
 
