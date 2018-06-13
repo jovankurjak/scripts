@@ -9,6 +9,7 @@ import re
 import options.unzip as zippin
 import options.grepall as grepall
 import options.cpu as cpu
+import options.misc as misc
 
 # Program version
 prog_version = '0.2'
@@ -54,11 +55,12 @@ def get_args():
     parser.add_argument('dirname',
                         nargs='?',
                         help='Directory where operation/s should be performed')
-    # parser.add_argument('-p',
-    #                     '--pattern',
-    #                     action="store",
-    #                     type=str,
-    #                     help='pattern that is used for search through file')
+    parser.add_argument('-o',
+                        '--output_file',
+                        action="store",
+                        type=str,
+                        default='cpu_quick_analysis.csv',
+                        help='file name for cpu analysis')
     parser.add_argument('-c',
                         '--cpu',
                         action='store_true',
@@ -176,7 +178,9 @@ def main():
             print('No log files')
             return
         print('MMX file analyzed: {}'.format(log_file_list['MMX']))
-        cpu.find_header(log_file_list['MMX'])
+        cpu_table, header_dict = cpu.find_header(log_file_list['MMX'])
+        print('CPU file: ' + args.output_file)
+        misc.write_to_csv(cpu_table, header_dict, args.output_file)
 
     if args.all_keywords:
         print('Option for all_keywords is active!')

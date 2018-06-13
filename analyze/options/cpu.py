@@ -1,6 +1,6 @@
 #!/usr/bin/python3
+""" CPU module """
 
-import collections
 import re
 
 
@@ -12,71 +12,40 @@ def find_header(file):
     currently active processes at that time
     """
     tell_position = 0
-    header_counter = 0
-    my_list = []
-    my_dict = {}
+    list_of_cpu_stats = []    # list in which all cpu activity results are kept
+    header_key_values = {}   # dictionary variable to store current row of cpu activity
     # csv_file = '/home/rtrk/Desktop/cpu.csv'
     csv_file = 'cpu_quick_analysis.csv'
-    with open(file, 'r', encoding='utf8', errors='ignore') as fp:
-        fp.seek(0, 2)
-        e_o_f = fp.tell()
-        fp.seek(0)
+    with open(file, 'r', encoding='utf8', errors='ignore') as file_pointer:
+        file_pointer.seek(0, 2)
+        e_o_f = file_pointer.tell()
+        file_pointer.seek(0)
 
-        print("Sum lines: " + len(fp.readlines()).__str__())
+        print("Sum lines: " + len(file_pointer.readlines()).__str__())
         while True:
-            """parse the file"""
+            # parse the file
             # Check for e_o_f
             if tell_position == e_o_f:
                 break
-            cur_header_start = get_next_pattern(fp, tell_position, 'CPU=')
-            tell_position = fp.tell()
-            cur_header_end = get_next_pattern(fp, tell_position, 'System is')
+            cur_header_start = get_next_pattern(file_pointer, tell_position, 'CPU=')
+            tell_position = file_pointer.tell()
+            cur_header_end = get_next_pattern(file_pointer, tell_position, 'System is')
             # Check for e_o_f
             if tell_position == e_o_f:
                 break
-            header_counter += 1
-            tell_position_end = fp.tell()
-            my_dict = dict.fromkeys(my_dict, '0')
-            (my_list, my_dict) = parse_for_functions(fp, cur_header_start, cur_header_end, my_list, my_dict)
-            tell_position = fp.tell()
+            parse_for_functions(file_pointer,
+                                cur_header_start,
+                                cur_header_end,
+                                list_of_cpu_stats,
+                                header_key_values)
+            tell_position = file_pointer.tell()
 
-        print('number of HB headers: ' + header_counter.__str__() + " end .tell() position:" + tell_position.__str__())
+        print('number of HB headers: '
+              + len(list_of_cpu_stats).__str__()
+              + " end .tell() position:"
+              + tell_position.__str__())
 
-        with open(csv_file, "w") as output:
-            """Write the list to csv file."""
-
-            header = 'time,'
-            all_values = ''
-            for key in my_list[-1].keys():
-                if key != 'time':
-                    header += (key + ',')
-
-            header += '\n'
-            for values in my_list[-4].values():
-                if my_list[-4]['time'] == values:
-                    all_values = values + ',' + all_values
-                else:
-                    all_values += (values + ',')
-
-            output.write(str(header))
-            # print(header)
-            # print(all_values)
-            for entries in my_list:
-                current_line = ''
-                for key_up in my_list[-1].keys():
-                    for key in entries.keys():
-                        if key_up is key:
-                            if key is 'time':
-                                current_line = entries[key] + ',' + current_line
-                            else:
-                                current_line += (entries[key] + ',')
-                            break
-                    else:
-                        current_line += ('0' + ',')
-
-                # print(current_line)
-                current_line += '\n'
-                output.write(current_line)
+    return list_of_cpu_stats, header_key_values
 
 
 def get_next_pattern(file_pointer, line_number, pattern):
@@ -87,39 +56,34 @@ def get_next_pattern(file_pointer, line_number, pattern):
     """
     file_pointer.seek(line_number)
     current_tell = file_pointer.tell()
-    for line_number, line in enumerate(iter(file_pointer.readline, '')):
+    for line in iter(file_pointer.readline, ''):
         line = line.rstrip()
         # find first header
-        # print(line)
         if re.search(pattern, line):
             break
         current_tell = file_pointer.tell()
     return current_tell
 
 
-def parse_for_functions(file_pointer, start_position, end_position, my_list, my_dict):
+def parse_for_functions(file_pointer, start_position, end_position, list_of_headers, key_values):
     """Module function
 
     Args:
         file_pointer (file desc): file descriptor currently parsed object.
         start_position (int): from what position in file to start parsing.
         end_position (int): to what position in file to parse.
-        my_list (List): List containing rows of the CPU table.
-        my_dict (Dictionary): Dictionary containing values for 1 row of my_list.
+        list_of_headers (List): List containing rows of the CPU table.
+        key_values (Dictionary): Set containing keywords for a row of my_list(cumulative).
+
+
     """
     file_pointer.seek(start_position + 1)
-    for line_number, line in enumerate(iter(file_pointer.readline, '')):
+    header_dict = {}
+    for line in iter(file_pointer.readline, ''):
         if file_pointer.tell() == end_position:
             # End list row
-            od = collections.OrderedDict(sorted(my_dict.items()))
-            my_list.append(od)
-            # print(od)
-            # print_od = ''
-            # for key in od:
-            #     print_od += '[' + key + ':' + od[key] + '%' + '] '
-            # print(print_od)
-            for value in my_dict.values():
-                value = ''
+            # ordered_dictionary = collections.OrderedDict(header_dict)
+            list_of_headers.append(header_dict)
             break
         line = line.rstrip()
         # check if header
@@ -128,20 +92,17 @@ def parse_for_functions(file_pointer, start_position, end_position, my_list, my_
             re_obj = re.search(regex, line)
             if re_obj:
                 # Add items to the list - start row
-                my_dict['time'] = re_obj.group(1)
-                my_dict['CPU'] = re_obj.group(2)
-                # print('CPU={0}; time={1}'.format(
-                #     re_obj.group(2).__str__(),
-                #     re_obj.group(1).__str__()))
+                header_dict['time'] = re_obj.group(1)
+                header_dict['CPU'] = re_obj.group(2)
+                # Add to header set
+                key_values['time'] = 1
+                key_values['CPU'] = 2
+
         else:
             # regex for function and percentage
-            regex = r"\b(\d+:\d+:\d+)[.\d\s]+\|[\s\d:]+HB:\s+[\b\w+\/.]+\/([\w-]+)\s+\(\d+\)\s([\d.]+)%"
+            regex = r"\b(\d+:\d+:\d+)[.\d\s]+\|[\s\d:]+HB:" \
+                    r"\s+[\b\w+\/.]+\/([\w-]+)\s+\(\d+\)\s([\d.]+)%"
             re_obj = re.search(regex, line)
             if re_obj:
-                my_dict[re_obj.group(2).__str__()] = re_obj.group(3)
-                # # Add items to the list
-                # print('{0}; {1} -> {2}%'.format(
-                #     re_obj.group(1).__str__(),
-                #     re_obj.group(2).__str__(),
-                #     re_obj.group(3).__str__()))
-    return my_list, my_dict
+                header_dict[re_obj.group(2).__str__()] = re_obj.group(3)
+                key_values[re_obj.group(2).__str__()] = 3
