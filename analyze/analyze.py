@@ -181,6 +181,7 @@ def main():
         cpu_table, header_dict = cpu.find_header(log_file_list['MMX'])
         print('CPU file: ' + args.output_file)
         misc.write_to_csv(cpu_table, header_dict, args.output_file)
+        misc.draw_cpu_graph(cpu_table, header_dict)
 
     if args.all_keywords:
         print('Option for all_keywords is active!')
